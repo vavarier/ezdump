@@ -1,0 +1,157 @@
+#!/bin/bash
+#####################################
+############ FUNCTIONS ##############
+#####################################
+
+init_script () {
+    os = ""
+    command_install = "$(get_install_command)"
+    filename = $([ "$#" -eq 1 ] && echo "$(realpath $1)" || echo "$(realpath .files/installfile)")
+    aur_helper_is_installed = false
+
+    while getopts ":h:t" o; do case "${o}" in
+	    h) display_usage;;
+        t) enable_test = true ;;
+    esac done
+    get_os_type; [[ "$os" = "" ]] && exit 1
+    get_update_command
+    install_yay
+}
+
+check_error () {
+    [[ "$1" -eq 0 ]] && return
+    read -p "error while installing, do you want to stop the script ? [y/N]" yn
+    case $yn in
+        y|Y) exit 1;;
+        *) return;;
+    esac
+}
+
+install_package () {
+    [ -z $enable_test ] || return
+    bash -c "$command_install "$1"" && return
+    [ $aur_helper_is_installed = true ] && yay -S --noconfirm "$1" || sudo snap install "$1"
+}
+
+install_from_file () {
+    while IFS = read -r line || [[ -n "$line" ]] ; do
+        echo "installing $line ..."
+        install_package "$line" && echo "success !" || check_error
+    done < "$1";
+}
+
+build_csfml () {
+    SFML_SOURCE_URL="http://www.sfml-dev.org/files/SFML-2.5.1-sources.zip"
+    CSFML_SOURCE_URL="http://www.sfml-dev.org/files/CSFML-2.5-sources.zip"
+    CSFML_ZIP="CSFML.zip"
+    SFML_ZIP="SFML.zip"
+
+    curl -Lo "$SFML_ZIP" $SFML_SOURCE_URL && unzip -qq -o $SFML_ZIP
+    curl -Lo "$CSFML_ZIP" $CSFML_SOURCE_URL && unzip -qq -o $CSFML_ZIP
+    mv SFML-* SFML; SFML_PATH="$(realpath SFML)"
+    mv CSFML-* CSFML; CSFML_PATH="$(realpath CSFML)"
+    cd SFML; cmake . && make; cd ../CSFML
+    cmake -DSFML_ROOT="$SFML_PATH" -DSFML_INCLUDE_DIR="$SFML_PATH/include" -DCMAKE_MODULE_PATH="$SFML_PATH/cmake/Modules" .
+    LD_LIBRARY_PATH="$SFML_PATH/lib"
+    make && make install
+    cd .. && echo "/usr/local/lib/" > /etc/ld.so.conf.d/csfml.conf && ldconfig
+    rm -rf "$CSFML_ZIP" "$CSFML_PATH" "$SFML_ZIP" "$SFML_PATH"; check_if_error $?
+}
+
+build_criterion_lib () {
+    URL="https://github.com/Snaipe/Criterion/releases/download/v2.3.2"
+    TARBALL="criterion-v2.3.2-linux-x86_64.tar.bz2"
+    DIR="criterion-v2.3.2"
+    DST="/usr/local/"
+
+    [ -z $enable_test ] || return ;;
+    cd /tmp ;rm -f $TARBALL; rm -fr $DIR
+    wget $URL/$TARBALL && check_if_error $?; tar xjf $TARBALL && check_if_error $?
+    sudo sh -c "echo "/usr/local/lib" > /etc/ld.so.conf.d/criterion.conf"
+    sudo cp -r $DIR/include/* $DST/include/ && sudo cp -r $DIR/lib/* $DST/lib/
+    sudo ldconfig
+}
+
+get_os_type () {
+    which zypper &> /dev/null && os="opensuse"
+    which pacman &> /dev/null && os="archlinux"
+    which dnf &> /dev/null && os="fedora"
+    which apt-get &> /dev/null && os="debian"
+}
+
+get_install_command () {
+    case "$os" in
+        opensuse) echo "sudo zypper -y install";;
+        archlinux) echo "sudo pacman --noconfirm --needed -S";;
+        fedora) echo "sudo dnf -y install";;
+        debian) echo "sudo apt-get -y install";;
+    esac
+}
+
+get_update_command () {
+    case "$os" in
+        opensuse) sudo zypper -y update;;
+        archlinux) sudo pacman --noconfirm -Sy;;
+        fedora) sudo dnf -y update;;
+        debian) sudo apt-get -y update; sudo apt -y upgrade;;
+    esac
+}
+
+disable_systembeep () {
+    sudo rmmod pcspkr && echo "blacklist pcspkr" > /etc/modprobe.d/nobeep.conf
+}
+
+upload_sshkey () {
+    [ -z $enable_test ] || return ;;
+    read -p "please enter your epitech email: " $email
+    sudo cp .files/blih /usr/local/bin
+    ssh-keygen && blih -u $email sshkey upload
+}
+
+check_if_epitech_user () {
+    read -p "are you an epitech user ? [N/y] " ny
+    case "$yn" in
+        y|Y) upload_sshkey;;
+        *) return ;;
+    esac
+}
+
+load_yay_install () {
+    [ -z $enable_test ] || return ;;
+    sudo pacman -S --noconfirm git make cmake gcc go; check_error
+    git clone https://aur.archlinux.org/yay-git.git && cd yay-git
+    sudo makepkg -si && cd ..; check_error
+}
+
+install_yay () {
+    [ "$os" = "archlinux" ] || return
+    read -p "do you want to install yay as an aur helper ? [Y/n]" yn
+    case "$yn" in
+        y|Y) load_yay_install;;
+        *) return ;;
+    esac
+}
+
+#############################################
+############# ACTUAL SCRIPTING ##############
+#############################################
+
+# checks if the script is started with sudo
+if [ "#EUID" -ne 0 ]; then
+    echo "Please run this script as root."
+    exit 1
+fi
+
+# Starts script -- handles error handling and variable assignation
+init_script
+
+## handles installation loop and important package install !!!
+install_from_file
+build_criterion_lib
+build_csfml
+
+# installs blih and uploads a new ssh key
+check_if_epitech_user
+
+# disables annoying motherboard beep
+disable_systembeep
