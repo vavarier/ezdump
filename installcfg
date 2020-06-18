@@ -30,7 +30,7 @@ check_error () {
 install_package () {
     [ -z $enable_test ] || return
     bash -c "$command_install "$1"" && return
-    [ $aur_helper_is_installed = true ] && yay -S --noconfirm "$1" || sudo snap install "$1"
+    [ $aur_helper_is_installed = true ] && yay -S --noconfirm "$1" || sudo snap install "$1" --classic
 }
 
 install_from_file () {
@@ -103,13 +103,13 @@ disable_systembeep () {
 
 upload_sshkey () {
     [ -z $enable_test ] || return ;;
-    read -p "please enter your epitech email: " $email
+    read -p "please enter your epitech email: " email
     sudo cp .files/blih /usr/local/bin
     ssh-keygen && blih -u $email sshkey upload
 }
 
 check_if_epitech_user () {
-    read -p "are you an epitech user ? [N/y] " ny
+    read -p "are you an epitech user ? [N/y] " yn
     case "$yn" in
         y|Y) upload_sshkey;;
         *) return ;;
