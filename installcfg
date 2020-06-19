@@ -4,10 +4,10 @@
 #####################################
 
 init_script () {
-    os = ""
-    command_install = "$(get_install_command)"
-    filename = $([ "$#" -eq 1 ] && echo "$(realpath $1)" || echo "$(realpath .files/installfile)")
-    aur_helper_is_installed = false
+    os=""
+    command_install="$(get_install_command)"
+    filename=$([ "$#" -eq 1 ] && echo "$(realpath $1)" || echo "$(realpath .files/installfile)")
+    aur_helper_is_installed=false
 
     while getopts ":h:t" o; do case "${o}" in
 	    h) display_usage;;
@@ -16,6 +16,13 @@ init_script () {
     get_os_type; [[ "$os" = "" ]] && exit 1
     get_update_command
     install_yay
+}
+
+display_usage () {
+    echo "bogdzn's ezdump script:"
+    echo "this script aims to quickly install any packages you want after a fresh Linux install. However, it does NOT helps with installing dotfiles, and config files. You could use a script like Larbs from Luke Smith for that."
+    echo "To use the script, you can either send as an argument a file with a list of programs you want to install, or you can use the default list."
+    exit 0
 }
 
 check_error () {
@@ -64,7 +71,7 @@ build_criterion_lib () {
     DIR="criterion-v2.3.2"
     DST="/usr/local/"
 
-    [ -z $enable_test ] || return ;;
+    [ -z $enable_test ] || return ;
     cd /tmp ;rm -f $TARBALL; rm -fr $DIR
     wget $URL/$TARBALL && check_if_error $?; tar xjf $TARBALL && check_if_error $?
     sudo sh -c "echo "/usr/local/lib" > /etc/ld.so.conf.d/criterion.conf"
@@ -102,7 +109,7 @@ disable_systembeep () {
 }
 
 upload_sshkey () {
-    [ -z $enable_test ] || return ;;
+    [ -z $enable_test ] || return ;
     read -p "please enter your epitech email: " email
     sudo cp .files/blih /usr/local/bin
     ssh-keygen && blih -u $email sshkey upload
@@ -117,7 +124,7 @@ check_if_epitech_user () {
 }
 
 load_yay_install () {
-    [ -z $enable_test ] || return ;;
+    [ -z $enable_test ] || return ;
     sudo pacman -S --noconfirm git make cmake gcc go; check_error
     git clone https://aur.archlinux.org/yay-git.git && cd yay-git
     sudo makepkg -si && cd ..; check_error
@@ -137,7 +144,7 @@ install_yay () {
 #############################################
 
 # checks if the script is started with sudo
-if [ "#EUID" -ne 0 ]; then
+if [ "$EUID" -ne 0 ]; then
     echo "Please run this script as root."
     exit 1
 fi
