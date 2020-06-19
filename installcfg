@@ -8,10 +8,11 @@ init_script () {
     command_install="$(get_install_command)"
     filename=$([ "$#" -eq 1 ] && echo "$(realpath $1)" || echo "$(realpath .files/installfile)")
     aur_helper_is_installed=false
+    enable_test=false
 
     while getopts ":h:t" o; do case "${o}" in
 	    h) display_usage;;
-        t) enable_test = true ;;
+        t) enable_test=true;;
     esac done
     get_os_type; [[ "$os" = "" ]] && exit 1
     get_update_command
@@ -132,7 +133,7 @@ load_yay_install () {
 
 install_yay () {
     [ "$os" = "archlinux" ] || return
-    read -p "do you want to install yay as an aur helper ? [Y/n]" yn
+    read -p "do you want to install yay as an aur helper ? [y/N]" yn
     case "$yn" in
         y|Y) load_yay_install;;
         *) return ;;
