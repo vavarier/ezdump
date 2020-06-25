@@ -144,12 +144,6 @@ install_yay () {
 ############# ACTUAL SCRIPTING ##############
 #############################################
 
-# checks if the script is started with sudo
-if [ "$EUID" -ne 0 ]; then
-    echo "Please run this script as root."
-    exit 1
-fi
-
 # Starts script -- handles error handling and variable assignation
 init_script
 
