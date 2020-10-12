@@ -13,23 +13,9 @@ Blue='\e[0;34m'         # Blue
 Cyan='\e[0;36m'         # Cyan
 NC="\e[m"               # Color Reset
 
-
-OS_TYPE=$(get_os)
-PKG_MANAGER=$(get_pkg_manager)
+IFS='\n'
 PKG_HELPER=""
 CSFML_SCRIPT_ADDRESS="https://raw.githubusercontent.com/Epitech/dump/master/build_csfml.sh"
-
-
-# input handling is set here for convenience
-while getopts "d:f:h" o; do case "${o}" in
-    h) display_help && exit 0 ;;
-    d) DOTFILES_URL=${OPTARG} ;;
-    f) PKG_FILE_PATH=${OPTARG} ;;
-    *) printf "${Red}/!\\${NC} Invalid option: -${Yellow}%s${NC}\n" "$OPTARG" && exit 1 ;;
-esac done
-
-[ -z "$DOTFILES_DIR" ] && DOTFILES_DIR="https://github.com/bogdzn/dotfiles"
-[ -z "$PKG_FILE_PATH" ] && PKG_FILE_PATH="./pkgs"
 
 #####################################
 ############ FUNCTIONS ##############
@@ -47,7 +33,7 @@ check_if_error () {
     if [ "$1" -ne 0 ]; then
         printf "${Red}ERROR.${NC}\n\n"
         read -p "Do you want to exit the script ? [y/N]" yn
-        case in "$yn"
+        case "$yn" in
             y|Y) exit 0 ;;
             *) return ;;
         esac
@@ -59,7 +45,7 @@ check_if_error () {
 
 install_criterion () {
     read -p "Do you want to install ${Blue}Epitech${NC}'s supported Criterion version ? [Y/n]" yn
-    case in "$yn"
+    case "$yn" in
         n|N) return ;;
         *) ;;
     esac
@@ -80,7 +66,7 @@ install_criterion () {
 
 install_csfml () {
     read -p "Do you want to install ${Blue}Epitech${NC}'s supported CSFML version ? [Y/n]" yn
-    case in "$yn"
+    case "$yn" in
         n|N) return ;;
         *) curl "$CSFML_SCRIPT_ADDRESS" | sudo bash ;;
     esac
@@ -91,7 +77,7 @@ install_csfml () {
 update () {
     printf "${Yellow}Updating packages: ${NC}"
 
-    case in "$OS_TYPE"
+    case "$OS_TYPE" in
         archlinux) sudo pacman --noconfirm -Syu ;;
         debian) sudo apt -y update && sudo apt -y upgrade ;;
         fedora) sudo dnf -y update ;;
@@ -112,7 +98,7 @@ install_yay () {
 }
 
 get_pkg_manager () {
-    case in "$OS_TYPE"
+    case "$OS_TYPE" in
         archlinux) echo "sudo pacman --noconfirm --needed -S" ;;
         debian) echo "sudo apt -y install" ;;
         fedora) echo "sudo dnf -y install" ;;
@@ -129,13 +115,13 @@ install () {
 
 get_package_helper () {
     read -p "Do you want to install an alternate package helper ? (Snap, yay, etc...) [Y/n]" yn
-    case in "$yn"
+    case "$yn" in
         n|N*) return ;;
         *) ;;
     esac
 
     read -p "Ok, please specify the name of the package installe you want to install: " pkg
-    case in "$pkg"
+    case "$pkg" in
         snap) PKG_HELPER="sudo snap install" && install "snapd" ;;
         flatpak) PKG_HELPER="sudo flatpak install" && install "flatpak" ;;
         yay) PKG_HELPER="yay -Syu --noconfirm" && install_yay ;;
@@ -150,7 +136,6 @@ install_loop () {
 }
 
 get_os () {
-    echo ""
     which zypper &> /dev/null && echo "opensuse"
     which pacman &> /dev/null && echo "archlinux"
     which dnf &> /dev/null && echo "fedora"
@@ -170,16 +155,30 @@ disable_systembeep () {
 
 init_script () {
 
-    if [[ "$EUID" -ne 0]]; then
+     OS_TYPE=$(get_os)
+    PKG_MANAGER=$(get_pkg_manager)
+
+    if [[ "$EUID" -ne 0 ]] ; then
         echo "${Red}This script must be run as root.${NC}"
         exit 1
 
-    elif [[ "$OS_TYPE" = "" ]]; then
+    elif [[ "$OS_TYPE" = "" ]] ; then
         echo "${Red}Error:${NC} Unsupported distribution."
         echo "Only ${Cyan}Archlinux${NC}, ${Red}Debian${NC}, ${Blue}Fedora${NC} and ${Green}OpenSUSE${NC} are supported."
         echo "Please modify the script or file an issue here: https://github.com/bogdzn/ezdump"
         exit 1
     fi
+
+    # input handling is set here for convenience
+    while getopts "hd:f:" o; do case "${o}" in
+        h) display_help && exit 0 ;;
+        d) DOTFILES_URL=${OPTARG} ;;
+        f) PKG_FILE_PATH=${OPTARG} ;;
+        *) printf "${Red}/!\\${NC} Invalid option: -${Yellow}%s${NC}\n" "$OPTARG" && exit 1 ;;
+    esac done
+
+    [ -z "$DOTFILES_DIR" ] && DOTFILES_DIR="https://github.com/bogdzn/dotfiles"
+    [ -z "$PKG_FILE_PATH" ] && PKG_FILE_PATH="./pkgs"
 }
 
 #####################################
