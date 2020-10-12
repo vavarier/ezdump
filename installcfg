@@ -14,8 +14,6 @@ Cyan='\e[0;36m'         # Cyan
 NC="\e[m"               # Color Reset
 
 
-IFS=' '
-
 OS_TYPE=$(get_os)
 PKG_MANAGER=$(get_pkg_manager)
 PKG_HELPER=""
@@ -47,7 +45,7 @@ display_help () {
 
 check_if_error () {
     if [ "$1" -ne 0 ]; then
-        printf "${Red}ERROR.${NC}\n"
+        printf "${Red}ERROR.${NC}\n\n"
         read -p "Do you want to exit the script ? [y/N]" yn
         case in "$yn"
             y|Y) exit 0 ;;
@@ -132,6 +130,12 @@ get_package_helper () {
     esac
 }
 
+install_loop () {
+    while IFS = read -r line || [ -n "$line" ] ; do
+        install "$line"
+    done < "$PKG_FILE_PATH"
+}
+
 disable_systembeep () {
     sudo rmmod pcskpkr && echo "blacklist pcspkr" > /etc/modprobe.d/nobeep.conf
 }
@@ -154,12 +158,13 @@ init_script () {
 ############# SCRIPT ################
 #####################################
 
-# todo install loop + dotfiles setup
+# todo dotfiles setup + criterion install
 
 init_script
 
 update
 
+install_loop
 
 install_csfml
 
