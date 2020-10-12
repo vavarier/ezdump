@@ -57,6 +57,27 @@ check_if_error () {
     fi
 }
 
+install_criterion () {
+    read -p "Do you want to install ${Blue}Epitech${NC}'s supported Criterion version ? [Y/n]" yn
+    case in "$yn"
+        n|N) return ;;
+        *) ;;
+    esac
+
+    URL="https://github.com/snaipe/criterion/releases/download/v2.3.2"
+    TARBALL="criterion-v2.3.2-linux-x86_64.tar.bz2"
+    DIR="criterion-v2.3.2"
+    DST="/usr/local/"
+
+    cd /tmp && rm "$TARBALL"; rm -rf "$DIR"
+    install "wget"
+    printf "${Yellow}Installing ${Blue}Criterion${Yellow}:${NC}"
+    wget wget "${URL}/${TARBALL}" && tar xjf "$TARBALL"
+    sudo sh -c "echo "/usr/local/lib" > /etc/ld.so.conf.d/criterion.conf && cp -r "$DIR"/include/* $"DST"/include && cp -r "$DIR"/lib/* "$DST"/lib/"
+
+    check_if_error "$?"
+}
+
 install_csfml () {
     read -p "Do you want to install ${Blue}Epitech${NC}'s supported CSFML version ? [Y/n]" yn
     case in "$yn"
@@ -65,14 +86,6 @@ install_csfml () {
     esac
 
     check_if_error "$?"
-}
-
-get_os () {
-    echo ""
-    which zypper &> /dev/null && echo "opensuse"
-    which pacman &> /dev/null && echo "archlinux"
-    which dnf &> /dev/null && echo "fedora"
-    which apt &> /dev/null && echo "debian"
 }
 
 update () {
@@ -110,7 +123,7 @@ get_pkg_manager () {
 
 install () {
     printf "${Yellow}Installing${NC}${Blue}"$1"${NC}: "
-    bash -c "$"PKG_HELPER" "$1"" >/dev/null 1>&2 || bash -c "$"PKG_HELPER" "$1""
+    bash -c "$"PKG_HELPER" "$1"" > /dev/null 1>&2 || bash -c "$"PKG_HELPER" "$1"" >/dev/null 1>&2
     check_if_error "$?"
 }
 
@@ -136,6 +149,21 @@ install_loop () {
     done < "$PKG_FILE_PATH"
 }
 
+get_os () {
+    echo ""
+    which zypper &> /dev/null && echo "opensuse"
+    which pacman &> /dev/null && echo "archlinux"
+    which dnf &> /dev/null && echo "fedora"
+    which apt &> /dev/null && echo "debian"
+}
+
+dotfiles () {
+    printf "${Cyan}Installing dotfiles...${NC}\n"
+    git clone "${DOTFILES_URL}" df || check_if_error "$?"
+    mv -v df/.config ~/
+    mv -v df/.*rc ~/
+}
+
 disable_systembeep () {
     sudo rmmod pcskpkr && echo "blacklist pcspkr" > /etc/modprobe.d/nobeep.conf
 }
@@ -157,8 +185,7 @@ init_script () {
 #####################################
 ############# SCRIPT ################
 #####################################
-
-# todo dotfiles setup + criterion install
+# todo add alwaysYes option and fakeInstall option for debug purposes
 
 init_script
 
@@ -168,4 +195,10 @@ install_loop
 
 install_csfml
 
+install_criterion
+
+dotfiles
+
 disable_systembeep
+
+printf "${Green}All done ! You config is ready.${NC}\n\n"
