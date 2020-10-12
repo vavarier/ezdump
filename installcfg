@@ -1,159 +1,166 @@
 #!/bin/bash
+# \author bogdzn
+
+#####################################
+############ VARIABLES ##############
+#####################################
+
+# print colors
+Red='\e[0;31m'          # Red
+Green='\e[0;32m'        # Green
+Yellow='\e[0;33m'       # Yellow
+Blue='\e[0;34m'         # Blue
+Cyan='\e[0;36m'         # Cyan
+NC="\e[m"               # Color Reset
+
+
+IFS=' '
+
+OS_TYPE=$(get_os)
+PKG_MANAGER=$(get_pkg_manager)
+PKG_HELPER=""
+CSFML_SCRIPT_ADDRESS="https://raw.githubusercontent.com/Epitech/dump/master/build_csfml.sh"
+
+
+# input handling is set here for convenience
+while getopts "d:f:h" o; do case "${o}" in
+    h) display_help && exit 0 ;;
+    d) DOTFILES_URL=${OPTARG} ;;
+    f) PKG_FILE_PATH=${OPTARG} ;;
+    *) printf "${Red}/!\\${NC} Invalid option: -${Yellow}%s${NC}\n" "$OPTARG" && exit 1 ;;
+esac done
+
+[ -z "$DOTFILES_DIR" ] && DOTFILES_DIR="https://github.com/bogdzn/dotfiles"
+[ -z "$PKG_FILE_PATH" ] && PKG_FILE_PATH="./pkgs"
+
 #####################################
 ############ FUNCTIONS ##############
 #####################################
 
-init_script () {
-    os=""
-    command_install="$(get_install_command)"
-    filename=$([ "$#" -eq 1 ] && echo "$(realpath $1)" || echo "$(realpath .files/installfile)")
-    aur_helper_is_installed=false
-    enable_test=false
-
-    while getopts ":h:t" o; do case "${o}" in
-	    h) display_usage;;
-        t) enable_test=true;;
-    esac done
-    get_os_type; [[ "$os" = "" ]] && exit 1
-    get_update_command
-    install_yay
+display_help () {
+    echo "Welcome to ${Yellow}Bogdzn's ezdump script${NC}, a basic tool to quickly dump whatever you need !"
+    echo "Here are the options you might need:"
+    echo "\t${Cyan}-h\t${NC}Display this message."
+    echo "\t${Cyan}-d\t${NC}Sets the dotfiles repository url (For your bashrc, etc...)."
+    echo "\t${Cyan}-f\t${NC}Sets the package list file path."
 }
 
-display_usage () {
-    echo "bogdzn's ezdump script:"
-    echo "this script aims to quickly install any packages you want after a fresh Linux install. However, it does NOT helps with installing dotfiles, and config files. You could use a script like Larbs from Luke Smith for that."
-    echo "To use the script, you can either send as an argument a file with a list of programs you want to install, or you can use the default list."
-    exit 0
+check_if_error () {
+    if [ "$1" -ne 0 ]; then
+        printf "${Red}ERROR.${NC}\n"
+        read -p "Do you want to exit the script ? [y/N]" yn
+        case in "$yn"
+            y|Y) exit 0 ;;
+            *) return ;;
+        esac
+
+    else printf "${Green}SUCCESS.${NC}\n"
+
+    fi
 }
 
-check_error () {
-    [[ "$1" -eq 0 ]] && return
-    read -p "error while installing, do you want to stop the script ? [y/N]" yn
-    case $yn in
-        y|Y) exit 1;;
-        *) return;;
+install_csfml () {
+    read -p "Do you want to install ${Blue}Epitech${NC}'s supported CSFML version ? [Y/n]" yn
+    case in "$yn"
+        n|N) return ;;
+        *) curl "$CSFML_SCRIPT_ADDRESS" | sudo bash ;;
+    esac
+
+    check_if_error "$?"
+}
+
+get_os () {
+    echo ""
+    which zypper &> /dev/null && echo "opensuse"
+    which pacman &> /dev/null && echo "archlinux"
+    which dnf &> /dev/null && echo "fedora"
+    which apt &> /dev/null && echo "debian"
+}
+
+update () {
+    printf "${Yellow}Updating packages: ${NC}"
+
+    case in "$OS_TYPE"
+        archlinux) sudo pacman --noconfirm -Syu ;;
+        debian) sudo apt -y update && sudo apt -y upgrade ;;
+        fedora) sudo dnf -y update ;;
+        opensuse) sudo zypper -y update ;;
+    esac
+
+    check_if_error "$?"
+}
+
+install_yay () {
+    [ "OS_TYPE" = "archlinux" ] || return
+
+    install "patch gcc git make cmake go"
+    git clone https://aur.archlinux.org/yay-git.git && cd yay-git
+    sudo makepkg -si
+
+    check_if_error "$?" ; cd ..
+}
+
+get_pkg_manager () {
+    case in "$OS_TYPE"
+        archlinux) echo "sudo pacman --noconfirm --needed -S" ;;
+        debian) echo "sudo apt -y install" ;;
+        fedora) echo "sudo dnf -y install" ;;
+        opensuse) echo "sudo zypper -y install" ;;
+        *) echo "" ;;
     esac
 }
 
-install_package () {
-    [ -z $enable_test ] || return
-    bash -c "$command_install "$1"" && return
-    [ $aur_helper_is_installed = true ] && yay -S --noconfirm "$1" || sudo snap install "$1" --classic
+install () {
+    printf "${Yellow}Installing${NC}${Blue}"$1"${NC}: "
+    bash -c "$"PKG_HELPER" "$1"" >/dev/null 1>&2 || bash -c "$"PKG_HELPER" "$1""
+    check_if_error "$?"
 }
 
-install_from_file () {
-    while IFS = read -r line || [[ -n "$line" ]] ; do
-        echo "installing $line ..."
-        install_package "$line" && echo "success !" || check_error
-    done < "$1";
-}
-
-build_csfml () {
-    SFML_SOURCE_URL="http://www.sfml-dev.org/files/SFML-2.5.1-sources.zip"
-    CSFML_SOURCE_URL="http://www.sfml-dev.org/files/CSFML-2.5-sources.zip"
-    CSFML_ZIP="CSFML.zip"
-    SFML_ZIP="SFML.zip"
-
-    curl -Lo "$SFML_ZIP" $SFML_SOURCE_URL && unzip -qq -o $SFML_ZIP
-    curl -Lo "$CSFML_ZIP" $CSFML_SOURCE_URL && unzip -qq -o $CSFML_ZIP
-    mv SFML-* SFML; SFML_PATH="$(realpath SFML)"
-    mv CSFML-* CSFML; CSFML_PATH="$(realpath CSFML)"
-    cd SFML; cmake . && make; cd ../CSFML
-    cmake -DSFML_ROOT="$SFML_PATH" -DSFML_INCLUDE_DIR="$SFML_PATH/include" -DCMAKE_MODULE_PATH="$SFML_PATH/cmake/Modules" .
-    LD_LIBRARY_PATH="$SFML_PATH/lib"
-    make && make install
-    cd .. && echo "/usr/local/lib/" > /etc/ld.so.conf.d/csfml.conf && ldconfig
-    rm -rf "$CSFML_ZIP" "$CSFML_PATH" "$SFML_ZIP" "$SFML_PATH"; check_if_error $?
-}
-
-build_criterion_lib () {
-    URL="https://github.com/Snaipe/Criterion/releases/download/v2.3.2"
-    TARBALL="criterion-v2.3.2-linux-x86_64.tar.bz2"
-    DIR="criterion-v2.3.2"
-    DST="/usr/local/"
-
-    [ -z $enable_test ] || return ;
-    cd /tmp ;rm -f $TARBALL; rm -fr $DIR
-    wget $URL/$TARBALL && check_if_error $?; tar xjf $TARBALL && check_if_error $?
-    sudo sh -c "echo "/usr/local/lib" > /etc/ld.so.conf.d/criterion.conf"
-    sudo cp -r $DIR/include/* $DST/include/ && sudo cp -r $DIR/lib/* $DST/lib/
-    sudo ldconfig
-}
-
-get_os_type () {
-    which zypper &> /dev/null && os="opensuse"
-    which pacman &> /dev/null && os="archlinux"
-    which dnf &> /dev/null && os="fedora"
-    which apt-get &> /dev/null && os="debian"
-}
-
-get_install_command () {
-    case "$os" in
-        opensuse) echo "sudo zypper -y install";;
-        archlinux) echo "sudo pacman --noconfirm --needed -S";;
-        fedora) echo "sudo dnf -y install";;
-        debian) echo "sudo apt-get -y install";;
+get_package_helper () {
+    read -p "Do you want to install an alternate package helper ? (Snap, yay, etc...) [Y/n]" yn
+    case in "$yn"
+        n|N*) return ;;
+        *) ;;
     esac
-}
 
-get_update_command () {
-    case "$os" in
-        opensuse) sudo zypper -y update;;
-        archlinux) sudo pacman --noconfirm -Sy;;
-        fedora) sudo dnf -y update;;
-        debian) sudo apt-get -y update; sudo apt -y upgrade;;
+    read -p "Ok, please specify the name of the package installe you want to install: " pkg
+    case in "$pkg"
+        snap) PKG_HELPER="sudo snap install" && install "snapd" ;;
+        flatpak) PKG_HELPER="sudo flatpak install" && install "flatpak" ;;
+        yay) PKG_HELPER="yay -Syu --noconfirm" && install_yay ;;
+        *) echo "${Red}Error:${NC} unrecognised package manager. Please edit the script or file an issue." && exit 1 ;;
     esac
 }
 
 disable_systembeep () {
-    sudo rmmod pcspkr && echo "blacklist pcspkr" > /etc/modprobe.d/nobeep.conf
+    sudo rmmod pcskpkr && echo "blacklist pcspkr" > /etc/modprobe.d/nobeep.conf
 }
 
-upload_sshkey () {
-    [ -z $enable_test ] || return ;
-    read -p "please enter your epitech email: " email
-    sudo cp .files/blih /usr/local/bin
-    ssh-keygen && blih -u $email sshkey upload
+init_script () {
+
+    if [[ "$EUID" -ne 0]]; then
+        echo "${Red}This script must be run as root.${NC}"
+        exit 1
+
+    elif [[ "$OS_TYPE" = "" ]]; then
+        echo "${Red}Error:${NC} Unsupported distribution."
+        echo "Only ${Cyan}Archlinux${NC}, ${Red}Debian${NC}, ${Blue}Fedora${NC} and ${Green}OpenSUSE${NC} are supported."
+        echo "Please modify the script or file an issue here: https://github.com/bogdzn/ezdump"
+        exit 1
+    fi
 }
 
-check_if_epitech_user () {
-    read -p "are you an epitech user ? [N/y] " yn
-    case "$yn" in
-        y|Y) upload_sshkey;;
-        *) return ;;
-    esac
-}
+#####################################
+############# SCRIPT ################
+#####################################
 
-load_yay_install () {
-    [ -z $enable_test ] || return ;
-    sudo pacman -S --noconfirm git make cmake gcc go; check_error
-    git clone https://aur.archlinux.org/yay-git.git && cd yay-git
-    sudo makepkg -si && cd ..; check_error
-}
+# todo install loop + dotfiles setup
 
-install_yay () {
-    [ "$os" = "archlinux" ] || return
-    read -p "do you want to install yay as an aur helper ? [y/N]" yn
-    case "$yn" in
-        y|Y) load_yay_install;;
-        *) return ;;
-    esac
-}
-
-#############################################
-############# ACTUAL SCRIPTING ##############
-#############################################
-
-# Starts script -- handles error handling and variable assignation
 init_script
 
-## handles installation loop and important package install !!!
-install_from_file
-build_criterion_lib
-build_csfml
+update
 
-# installs blih and uploads a new ssh key
-check_if_epitech_user
 
-# disables annoying motherboard beep
+install_csfml
+
 disable_systembeep

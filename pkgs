@@ -1,0 +1,15 @@
+gcc
+make
+gcovr
+node
+vim
+valgrind
+gdb
+docker
+docker-compose
+criterion
+git
+cmake
+go
+openssh
+tree
