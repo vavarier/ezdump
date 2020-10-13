@@ -1,0 +1,16 @@
+build-essential
+gcovr
+git
+nodejs
+npm
+vim
+valgrind
+gdb
+docker
+docker-compose
+cmake
+openssh
+tree
+go
+libncurses5-dev
+libncursesw5-dev

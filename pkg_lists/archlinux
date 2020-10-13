@@ -1,0 +1,16 @@
+gcc
+make
+gcovr
+nodejs
+npm
+vim
+valgrind
+gdb
+docker
+docker-compose
+git
+cmake
+go
+openssh
+tree
+ncurses
