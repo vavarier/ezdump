@@ -31,9 +31,10 @@ display_help () {
 check_if_error () {
     if [ "$1" -ne 0 ]; then
         printf "${Red}ERROR.${NC}\n\n"
+
         read -p "Do you want to exit the script ? [y/N] " yn
         case "$yn" in
-            y|Y) exit 0 ;;
+            y|Y) exit 1 ;;
             *) return ;;
         esac
 
@@ -107,8 +108,8 @@ get_pkg_manager () {
 }
 
 install () {
-    printf "${Yellow}Installing${NC}${Blue}"$1"${NC}: "
-    bash -c "$"PKG_HELPER" "$1"" > /dev/null 1>&2 || bash -c "$"PKG_HELPER" "$1"" >/dev/null 1>&2
+    printf "${Yellow}Installing ${NC}${Blue}"$1"${NC}: "
+    bash -c "$(get_pkg_manager) "$1"" &> /dev/null || bash -c "$"PKG_HELPER" "$1"" &> /dev/null
     check_if_error "$?"
 }
 
@@ -129,7 +130,7 @@ get_package_helper () {
 }
 
 install_loop () {
-    while IFS = read -r line || [ -n "$line" ] ; do
+    while IFS= read -r line || [[ -n "$line" ]]; do
         install "$line"
     done < "$PKG_FILE_PATH"
 }
@@ -156,7 +157,7 @@ dotfiles () {
 }
 
 disable_systembeep () {
-    sudo rmmod pcskpkr > /dev/null 1>&2 && echo "blacklist pcspkr" > /etc/modprobe.d/nobeep.conf
+    sudo rmmod pcskpkr &> /dev/null && echo "blacklist pcspkr" > /etc/modprobe.d/nobeep.conf
 }
 
 init_script () {
@@ -171,8 +172,8 @@ init_script () {
     OS_TYPE=$(get_os)
     PKG_MANAGER=$(get_pkg_manager)
 
-    [ -z "$DOTFILES_URL" ] || DOTFILES_URL="https://github.com/bogdzn/dotfiles"
-    [ -z "$PKG_FILE_PATH" ] || PKG_FILE_PATH="./pkgs"
+    [ -z "$DOTFILES_URL" ] && DOTFILES_URL="https://github.com/bogdzn/dotfiles"
+    [ -z "$PKG_FILE_PATH" ] && PKG_FILE_PATH="./pkgs"
 
     if [[ "$EUID" -ne 0 ]] ; then
         printf "${Red}This script must be run as root.${NC}\n"
