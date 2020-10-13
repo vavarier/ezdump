@@ -43,7 +43,7 @@ check_if_error () {
 }
 
 install_criterion () {
-    read -p "Do you want to install Epitech's supported Criterion version ? [Y/n]" yn
+    read -p "Do you want to install Epitech's supported Criterion version ? [Y/n] " yn
     case "$yn" in
         n|N) return ;;
         *) ;;
@@ -64,7 +64,7 @@ install_criterion () {
 }
 
 install_csfml () {
-    read -p "Do you want to install Epitech's supported CSFML version ? [Y/n]" yn
+    read -p "Do you want to install Epitech's supported CSFML version ? [Y/n] " yn
     case "$yn" in
         n|N) return ;;
         *) curl "$CSFML_SCRIPT_ADDRESS" | sudo bash ;;
@@ -113,7 +113,7 @@ install () {
 }
 
 get_package_helper () {
-    read -p "Do you want to install an alternate package helper ? (Snap, yay, etc...) [Y/n]" yn
+    read -p "Do you want to install an alternate package helper ? (Snap, yay, etc...) [Y/n] " yn
     case "$yn" in
         n|N*) return ;;
         *) ;;
@@ -142,14 +142,21 @@ get_os () {
 }
 
 dotfiles () {
+    read -p "Install dotfiles ? [Y/n] " yn
+
+    case "$yn" in
+        n|N) return ;;
+        *) ;;
+    esac
+
     printf "${Cyan}Installing dotfiles...${NC}\n"
     git clone "${DOTFILES_URL}" df || check_if_error "$?"
-    rm -rf ~/.config; rm -rf ~/.*rc
-    mv -v df/.config ~/; mv -v df/.*rc ~/
+    rm -rf /home/*/.config; rm -rf /home/*/.*rc
+    mv -v /home/*/.config ~/; mv -v /home/*/.*rc ~/
 }
 
 disable_systembeep () {
-    sudo rmmod pcskpkr && echo "blacklist pcspkr" > /etc/modprobe.d/nobeep.conf
+    sudo rmmod pcskpkr > /dev/null 1>&2 && echo "blacklist pcspkr" > /etc/modprobe.d/nobeep.conf
 }
 
 init_script () {
@@ -164,8 +171,8 @@ init_script () {
     OS_TYPE=$(get_os)
     PKG_MANAGER=$(get_pkg_manager)
 
-    [ -z "$DOTFILES_URL" ] && DOTFILES_URL="https://github.com/bogdzn/dotfiles"
-    [ -z "$PKG_FILE_PATH" ] && PKG_FILE_PATH="./pkgs"
+    [ -z "$DOTFILES_URL" ] || DOTFILES_URL="https://github.com/bogdzn/dotfiles"
+    [ -z "$PKG_FILE_PATH" ] || PKG_FILE_PATH="./pkgs"
 
     if [[ "$EUID" -ne 0 ]] ; then
         printf "${Red}This script must be run as root.${NC}\n"
@@ -187,6 +194,8 @@ init_script () {
 init_script "$@"
 
 update
+
+get_package_helper
 
 install_loop
 
