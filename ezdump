@@ -160,6 +160,12 @@ disable_systembeep () {
     sudo rmmod pcskpkr &> /dev/null && echo "blacklist pcspkr" > /etc/modprobe.d/nobeep.conf
 }
 
+get_default_pkgfile () {
+    LIST_URL="https://raw.githubusercontent.com/bogdzn/ezdump/master/pkg_lists/"
+
+    curl -LO "${LIST_URL}${OS_TYPE}" && mv "$OS_TYPE" pkgs
+}
+
 init_script () {
     # input handling is set here for convenience
     while getopts "hd:f:" opt; do case "$opt" in
@@ -173,7 +179,7 @@ init_script () {
     PKG_MANAGER=$(get_pkg_manager)
 
     [ -z "$DOTFILES_URL" ] && DOTFILES_URL="https://github.com/bogdzn/dotfiles"
-    [ -z "$PKG_FILE_PATH" ] && PKG_FILE_PATH="./pkgs"
+    [ -z "$PKG_FILE_PATH" ] && PKG_FILE_PATH="./pkgs" && get_default_pkgfile
 
     if [[ "$EUID" -ne 0 ]] ; then
         printf "${Red}This script must be run as root.${NC}\n"
