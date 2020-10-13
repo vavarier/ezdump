@@ -1,7 +1,7 @@
 gcc
 make
 gcovr
-node
+nodejs
 vim
 valgrind
 gdb
