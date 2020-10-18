@@ -12,8 +12,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - name: install dox2unix
-        run: sudo apt-get install -y dos2unix
       - name: Display usage !
         run: bash ezdump -h
       - name: Run the script !
