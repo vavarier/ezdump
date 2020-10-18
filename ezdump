@@ -30,7 +30,7 @@ display_help () {
     printf "\t${Cyan}-b\t${NC}Sets debug mode.\n"
 }
 
-welcome () { printf "Welcome to ${Yellow}Bogdzn's ezdump script !${NC}.\nInstallation starting now ...\n" }
+welcome () { printf "Welcome to ${Yellow}Bogdzn's ezdump script !${NC}.\nInstallation starting now ...\n" ; }
 
 check_if_error () { printf "${Red}ERROR.${NC}\n\n" && exit 1 ; }
 
