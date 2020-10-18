@@ -54,7 +54,7 @@ update () {
     printf "${Yellow}Updating packages: ${NC}"
     case "$OS_TYPE" in
         archlinux) sudo pacman --noconfirm -Syu &> /dev/null ;;
-        debian) sudo apt-get -y upgrade &> /dev/null ;;
+        debian) sudo apt -y update &> /dev/null && sudo apt -y upgrade &> /dev/null ;;
         fedora) sudo dnf -y update &> /dev/null ;;
         opensuse) sudo zypper -y update &> /dev/null ;;
     esac
