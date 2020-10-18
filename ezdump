@@ -100,8 +100,7 @@ get_os () {
 dotfiles () {
     printf "${Cyan}Installing dotfiles...${NC}\n"
     git clone "${DOTFILES_URL}" df || check_if_error "$?"
-    rm -rf ~/.config; rm -rf ~/.*rc
-    mv -v df/.config ~/.config ~/; mv -v df/.*rc ~/
+    mv -vu df/.config ~/.config ~/; mv -vu df/.*rc ~/
 }
 
 disable_systembeep () { sudo rmmod pcskpkr &> /dev/null && echo "blacklist pcspkr" > /etc/modprobe.d/nobeep.conf ; }
