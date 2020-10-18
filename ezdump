@@ -26,30 +26,15 @@ display_help () {
     printf "\t${Cyan}-h\t${NC}Display this message.\n"
     printf "\t${Cyan}-d\t${NC}Sets the dotfiles repository url (For your bashrc, etc...).\n"
     printf "\t${Cyan}-f\t${NC}Sets the package list file path.\n"
+    printf "\t${Cyan}-y\t${NC}Will always answer yes.\n"
+    printf "\t${Cyan}-b\t${NC}Sets debug mode.\n"
 }
 
-check_if_error () {
-    if [ "$1" -ne 0 ]; then
-        printf "${Red}ERROR.${NC}\n\n"
+welcome () { printf "Welcome to ${Yellow}Bogdzn's ezdump script !${NC}.\nInstallation starting now ...\n" }
 
-        read -p "Do you want to exit the script ? [y/N] " yn
-        case "$yn" in
-            y|Y) exit 1 ;;
-            *) return ;;
-        esac
-
-    else printf "${Green}SUCCESS.${NC}\n"
-
-    fi
-}
+check_if_error () { printf "${Red}ERROR.${NC}\n\n" && exit 1 }
 
 install_criterion () {
-    read -p "Do you want to install Epitech's supported Criterion version ? [Y/n] " yn
-    case "$yn" in
-        n|N) return ;;
-        *) ;;
-    esac
-
     URL="https://github.com/snaipe/criterion/releases/download/v2.3.2"
     TARBALL="criterion-v2.3.2-linux-x86_64.tar.bz2"
     DIR="criterion-v2.3.2"
@@ -58,43 +43,22 @@ install_criterion () {
     cd /tmp && rm "$TARBALL"; rm -rf "$DIR"
     install "wget"
     printf "Installing Criterion: "
-    wget "${URL}/${TARBALL}" && tar xjf "$TARBALL"
-    sudo sh -c "echo "/usr/local/lib" > /etc/ld.so.conf.d/criterion.conf && cp -r "$DIR"/include/* $"DST"/include && cp -r "$DIR"/lib/* "$DST"/lib/"
-
+    wget "${URL}/${TARBALL}" &>/dev/null && tar xjf "$TARBALL" &>/dev/null
+    sudo sh -c "echo "/usr/local/lib" > /etc/ld.so.conf.d/criterion.conf && cp -r "$DIR"/include/* $"DST"/include && cp -r "$DIR"/lib/* "$DST"/lib/" &>/dev/null
     check_if_error "$?"
 }
 
-install_csfml () {
-    read -p "Do you want to install Epitech's supported CSFML version ? [Y/n] " yn
-    case "$yn" in
-        n|N) return ;;
-        *) curl "$CSFML_SCRIPT_ADDRESS" | sudo bash ;;
-    esac
-
-    check_if_error "$?"
-}
+install_csfml () { curl "$CSFML_SCRIPT_ADDRESS" | sudo bash &> /dev/null }
 
 update () {
     printf "${Yellow}Updating packages: ${NC}"
-
     case "$OS_TYPE" in
-        archlinux) sudo pacman --noconfirm -Syu > /dev/null 1>&2 ;;
-        debian) sudo apt -y update && sudo apt -y upgrade > /dev/null 1>&2 ;;
-        fedora) sudo dnf -y update > /dev/null 1>&2 ;;
-        opensuse) sudo zypper -y update > /dev/null 1>&2 ;;
+        archlinux) sudo pacman --noconfirm -Syu &> /dev/null ;;
+        debian) sudo apt -y update && sudo apt -y upgrade &> /dev/null ;;
+        fedora) sudo dnf -y update &> /dev/null ;;
+        opensuse) sudo zypper -y update &> /dev/null ;;
     esac
-
     check_if_error "$?"
-}
-
-install_yay () {
-    [ "OS_TYPE" = "archlinux" ] || return
-
-    install "patch gcc git make cmake go"
-    git clone https://aur.archlinux.org/yay-git.git && cd yay-git
-    sudo makepkg -si
-
-    check_if_error "$?" ; cd ..
 }
 
 get_pkg_manager () {
@@ -114,19 +78,16 @@ install () {
 }
 
 get_package_helper () {
-    read -p "Do you want to install an alternate package helper ? (Snap, yay, etc...) [Y/n] " yn
-    case "$yn" in
-        n|N*) return ;;
-        *) ;;
-    esac
-
-    read -p "Ok, please specify the name of the package installer you want to install: " pkg
-    case "$pkg" in
-        snap) PKG_HELPER="sudo snap install" && install "snapd" ;;
-        flatpak) PKG_HELPER="sudo flatpak install" && install "flatpak" ;;
-        yay) PKG_HELPER="yay -Syu --noconfirm" && install_yay ;;
-        *) printf "${Red}Error:${NC} unrecognised package manager. Please edit the script or file an issue.\n" && exit 1 ;;
-    esac
+    if [[ "$OS_TYPE" = "archlinux" ]]; then
+        install "patch gcc git make cmake go"
+        git clone https://aur.archlinux.org/yay-git.git &>/dev/null && cd yay-git
+        sudo makepkg -si &> /dev/null
+        PKG_HELPER="yay -S --needed --noconfirm"
+        check_if_error "$?" ; cd ..
+    else
+        install "flatpak"
+        PKG_HELPER="sudo flatpak install"
+    fi
 }
 
 install_loop () {
@@ -143,32 +104,21 @@ get_os () {
 }
 
 dotfiles () {
-    read -p "Install dotfiles ? [Y/n] " yn
-
-    case "$yn" in
-        n|N) return ;;
-        *) ;;
-    esac
-
     printf "${Cyan}Installing dotfiles...${NC}\n"
     git clone "${DOTFILES_URL}" df || check_if_error "$?"
-    rm -rf /home/*/.config; rm -rf /home/*/.*rc
-    mv -v /home/*/.config ~/; mv -v /home/*/.*rc ~/
+    rm -rf ~/.config; rm -rf ~/.*rc
+    mv -v df/.config ~/.config ~/; mv -v df/.*rc ~/
 }
 
-disable_systembeep () {
-    sudo rmmod pcskpkr &> /dev/null && echo "blacklist pcspkr" > /etc/modprobe.d/nobeep.conf
-}
+disable_systembeep () { sudo rmmod pcskpkr &> /dev/null && echo "blacklist pcspkr" > /etc/modprobe.d/nobeep.conf }
 
 get_default_pkgfile () {
     LIST_URL="https://raw.githubusercontent.com/bogdzn/ezdump/master/pkg_lists/"
-
-    curl -LO "${LIST_URL}${OS_TYPE}" && mv "$OS_TYPE" pkgs
+    curl -LO "${LIST_URL}${OS_TYPE}" &> /dev/null && mv "$OS_TYPE" pkgs
 }
 
 init_script () {
-    # input handling is set here for convenience
-    while getopts "hd:f:" opt; do case "$opt" in
+    while getopts "hd:f:yb" opt; do case "$opt" in
         h) display_help && exit 0 ;;
         d) DOTFILES_URL=${OPTARG} ;;
         f) PKG_FILE_PATH=${OPTARG} ;;
@@ -177,15 +127,10 @@ init_script () {
 
     OS_TYPE=$(get_os)
     PKG_MANAGER=$(get_pkg_manager)
-
     [ -z "$DOTFILES_URL" ] && DOTFILES_URL="https://github.com/bogdzn/dotfiles"
     [ -z "$PKG_FILE_PATH" ] && PKG_FILE_PATH="./pkgs" && get_default_pkgfile
 
-    if [[ "$EUID" -ne 0 ]] ; then
-        printf "${Red}This script must be run as root.${NC}\n"
-        exit 1
-
-    elif [[ "$OS_TYPE" = "" ]] ; then
+    if [[ "$OS_TYPE" = "" ]] ; then
         printf "${Red}Error:${NC} Unsupported distribution.\n"
         printf "Only ${Cyan}Archlinux${NC}, ${Red}Debian${NC}, ${Blue}Fedora${NC} and ${Green}OpenSUSE${NC} are supported.\n"
         printf "Please modify the script or file an issue here: https://github.com/bogdzn/ezdump\n"
@@ -196,9 +141,10 @@ init_script () {
 #####################################
 ############# SCRIPT ################
 #####################################
-# todo add alwaysYes option and fakeInstall option for debug purposes
 
 init_script "$@"
+
+welcome
 
 update
 

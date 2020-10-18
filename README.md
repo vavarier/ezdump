@@ -28,11 +28,6 @@ This simple bash script is *not* POSIX-compliant, and comports some *bashisms*, 
 - install routine for an alternate package manager, such as yay, snap or flatpak
 - disable the system-beep from the motherboard when you start up your computer
 
-## To do
-
-- script option to always respond yes, when prompted a question
-- debug script option
-
 ## How do I use it ?
 
 You can check the script usage by doing:
