@@ -32,7 +32,7 @@ display_help () {
 
 welcome () { printf "Welcome to ${Yellow}Bogdzn's ezdump script !${NC}.\nInstallation starting now ...\n" }
 
-check_if_error () { printf "${Red}ERROR.${NC}\n\n" && exit 1 }
+check_if_error () { printf "${Red}ERROR.${NC}\n\n" && exit 1 ; }
 
 install_criterion () {
     URL="https://github.com/snaipe/criterion/releases/download/v2.3.2"
@@ -48,7 +48,7 @@ install_criterion () {
     check_if_error "$?"
 }
 
-install_csfml () { curl "$CSFML_SCRIPT_ADDRESS" | sudo bash &> /dev/null }
+install_csfml () { curl "$CSFML_SCRIPT_ADDRESS" | sudo bash &> /dev/null ; }
 
 update () {
     printf "${Yellow}Updating packages: ${NC}"
@@ -110,7 +110,7 @@ dotfiles () {
     mv -v df/.config ~/.config ~/; mv -v df/.*rc ~/
 }
 
-disable_systembeep () { sudo rmmod pcskpkr &> /dev/null && echo "blacklist pcspkr" > /etc/modprobe.d/nobeep.conf }
+disable_systembeep () { sudo rmmod pcskpkr &> /dev/null && echo "blacklist pcspkr" > /etc/modprobe.d/nobeep.conf ; }
 
 get_default_pkgfile () {
     LIST_URL="https://raw.githubusercontent.com/bogdzn/ezdump/master/pkg_lists/"
