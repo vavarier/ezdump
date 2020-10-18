@@ -45,7 +45,7 @@ install_criterion () {
     sudo sh -c "echo "/usr/local/lib" > /etc/ld.so.conf.d/criterion.conf && cp -r "$DIR"/include/* $"DST"/include && cp -r "$DIR"/lib/* "$DST"/lib/" &>/dev/null
 }
 
-install_csfml () { curl "$CSFML_SCRIPT_ADDRESS" | sudo bash &> /dev/null ; }
+install_csfml () { curl "$CSFML_SCRIPT_ADDRESS" 2>/dev/null | sudo bash &> /dev/null ; }
 
 update () {
     printf "${Yellow}Updating packages\n${NC}"
@@ -99,8 +99,8 @@ get_os () {
 
 dotfiles () {
     printf "${Cyan}Installing dotfiles...${NC}\n"
-    git clone "${DOTFILES_URL}" df || check_if_error "$?"
-    mv -vu df/.config ~/.config ~/; mv -vu df/.*rc ~/
+    git clone "${DOTFILES_URL}" df &> /dev/null
+    mv -u df/.config ~/ &>/dev/null ; mv -u df/.*rc ~/ &>/dev/null
 }
 
 disable_systembeep () { sudo rmmod pcskpkr &> /dev/null && echo "blacklist pcspkr" > /etc/modprobe.d/nobeep.conf ; }
