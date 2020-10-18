@@ -161,3 +161,4 @@ dotfiles
 disable_systembeep
 
 printf "${Green}All done ! You config is ready.${NC}\n\n"
+
