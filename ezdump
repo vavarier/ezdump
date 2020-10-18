@@ -32,8 +32,6 @@ display_help () {
 
 welcome () { printf "Welcome to ${Yellow}Bogdzn's ezdump script !${NC}.\nInstallation starting now ...\n" ; }
 
-check_if_error () { printf "${Red}ERROR.${NC}\n\n" && exit 1 ; }
-
 install_criterion () {
     URL="https://github.com/snaipe/criterion/releases/download/v2.3.2"
     TARBALL="criterion-v2.3.2-linux-x86_64.tar.bz2"
@@ -42,23 +40,21 @@ install_criterion () {
 
     cd /tmp && rm "$TARBALL"; rm -rf "$DIR"
     install "wget"
-    printf "Installing Criterion: "
+    printf "\n${Red}Installing Criterion${NC}\n"
     wget "${URL}/${TARBALL}" &>/dev/null && tar xjf "$TARBALL" &>/dev/null
     sudo sh -c "echo "/usr/local/lib" > /etc/ld.so.conf.d/criterion.conf && cp -r "$DIR"/include/* $"DST"/include && cp -r "$DIR"/lib/* "$DST"/lib/" &>/dev/null
-    check_if_error "$?"
 }
 
 install_csfml () { curl "$CSFML_SCRIPT_ADDRESS" | sudo bash &> /dev/null ; }
 
 update () {
-    printf "${Yellow}Updating packages: ${NC}"
+    printf "${Yellow}Updating packages\n${NC}"
     case "$OS_TYPE" in
         archlinux) sudo pacman --noconfirm -Syu &> /dev/null ;;
         debian) sudo apt -y update &> /dev/null && sudo apt -y upgrade &> /dev/null ;;
         fedora) sudo dnf -y update &> /dev/null ;;
         opensuse) sudo zypper -y update &> /dev/null ;;
     esac
-    check_if_error "$?"
 }
 
 get_pkg_manager () {
@@ -72,9 +68,8 @@ get_pkg_manager () {
 }
 
 install () {
-    printf "${Yellow}Installing ${NC}${Blue}"$1"${NC}: "
+    printf "${Yellow}Installing ${NC}${Blue}"$1"${NC}\n"
     bash -c "$(get_pkg_manager) "$1"" &> /dev/null || bash -c "$"PKG_HELPER" "$1"" &> /dev/null
-    check_if_error "$?"
 }
 
 get_package_helper () {
@@ -83,7 +78,6 @@ get_package_helper () {
         git clone https://aur.archlinux.org/yay-git.git &>/dev/null && cd yay-git
         sudo makepkg -si &> /dev/null
         PKG_HELPER="yay -S --needed --noconfirm"
-        check_if_error "$?" ; cd ..
     else
         install "flatpak"
         PKG_HELPER="sudo flatpak install"
