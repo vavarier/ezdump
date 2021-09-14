@@ -69,6 +69,11 @@ get_pkg_manager () {
 
 install () {
     printf "${Yellow}Installing ${NC}${Blue}"$1"${NC}\n"
+    whereis "${1}" && {
+        printf "${Yellow}Already installed...skipping...\n"${NC}"" &&
+        return ;
+    }
+
     bash -c "$(get_pkg_manager) "$1"" &> /dev/null || bash -c "$"PKG_HELPER" "$1"" &> /dev/null
 }
 
