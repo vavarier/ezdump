@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # \author bogdzn
 
 #####################################
@@ -69,7 +69,7 @@ get_pkg_manager () {
 
 install () {
     printf "${Yellow}Installing ${NC}${Blue}"$1"${NC}\n"
-    whereis "${1}" && {
+    which "${1}" 2> /dev/null && {
         printf "${Yellow}Already installed...skipping...\n"${NC}"" &&
         return ;
     }
