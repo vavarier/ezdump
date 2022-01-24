@@ -73,7 +73,6 @@ install () {
         printf "${Yellow}Already installed...skipping...\n"${NC}"" &&
         return ;
     }
-
     bash -c "$(get_pkg_manager) "$1"" &> /dev/null || bash -c "$"PKG_HELPER" "$1"" &> /dev/null
 }
 
@@ -127,7 +126,7 @@ init_script () {
     PKG_MANAGER=$(get_pkg_manager)
     [ -z "$DOTFILES_URL" ] && DOTFILES_URL="https://github.com/bogdzn/dotfiles"
     [ -z "$PKG_FILE_PATH" ] && PKG_FILE_PATH="./pkgs" && get_default_pkgfile
-
+    sleep 1
     if [[ "$OS_TYPE" = "" ]] ; then
         printf "${Red}Error:${NC} Unsupported distribution.\n"
         printf "Only ${Cyan}Archlinux${NC}, ${Red}Debian${NC}, ${Blue}Fedora${NC} and ${Green}OpenSUSE${NC} are supported.\n"
